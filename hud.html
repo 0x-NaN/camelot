@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="refresh" content="30">
+<title>CAMELOT HUD</title>
+<style>
+  :root {
+    --bg: #000000; --text: #ffffff; --border: #ffffff;
+    --gray-light: #222222; --gray-dark: #aaaaaa;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: "Amazon Ember", Bookerly, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 12px; max-width: 600px; margin: 0 auto; line-height: 1.25;
+  }
+  .header {
+    border-bottom: 3px double var(--border);
+    padding-bottom: 8px; margin-bottom: 10px;
+  }
+  .title { font-size: 32px; font-weight: 900; letter-spacing: 0.08em; line-height: 1; }
+  
+  summary.divider {
+    display: flex; align-items: center; gap: 8px;
+    margin: 10px 0 6px 0; font-size: 12px; font-weight: 900;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    cursor: pointer; list-style: none;
+  }
+  summary.divider::-webkit-details-marker {
+    display: none;
+  }
+  summary.divider::before, summary.divider::after { content: ''; flex: 1; height: 2px; background: var(--border); }
+  
+  .divider-static {
+    display: flex; align-items: center; gap: 8px;
+    margin: 10px 0 6px 0; font-size: 12px; font-weight: 900;
+    text-transform: uppercase; letter-spacing: 0.1em;
+  }
+  .divider-static::before, .divider-static::after { content: ''; flex: 1; height: 2px; background: var(--border); }
+
+  .bar-track { height: 5px; background: var(--gray-light); border: 1px solid var(--border); margin-top: 5px; }
+  .bar-fill { height: 100%; background: var(--border); }
+  .bar-fill.warn { background: var(--gray-dark); }
+  .bar-fill.danger { background: var(--border); }
+
+  .tbl { width: 100%; border-collapse: collapse; margin-bottom: 6px; border: 2px solid var(--border); }
+  .tbl th {
+    font-size: 12px; font-weight: 900; text-transform: uppercase;
+    letter-spacing: 0.08em; text-align: left; padding: 5px 8px;
+    border-bottom: 2px solid var(--border); background: var(--gray-light);
+  }
+  .tbl td { padding: 5px 8px; border-bottom: 1px solid var(--gray-light); font-size: 13px; font-weight: 800; }
+  .tbl tr:last-child td { border-bottom: none; }
+  
+  .td-time { color: var(--gray-dark); white-space: nowrap; width: 40px; }
+  .td-msg { color: var(--text); }
+  .td-label { color: var(--gray-dark); width: 80px; }
+  .td-value { font-weight: 900; font-size: 14px; }
+  .td-svc { }
+  .td-status { width: 90px; }
+  .status-dot { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 900; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border); border: 1px solid var(--border); }
+  .dot.offline { background: var(--bg); border: 2px solid var(--border); }
+  .status-text.online { color: var(--text); }
+  .status-text.offline { color: var(--gray-dark); text-decoration: line-through; }
+  
+  details {
+    outline: none;
+  }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="title">CAMELOT</div>
+  </div>
+
+  <div class="divider-static">System</div>
+  <table style="width: 100%; border: none; border-collapse: collapse; margin-bottom: 6px;">
+    <tr>
+      <td style="width: 70%; vertical-align: top; border: none; padding: 0;">
+        <table class="tbl" style="margin-bottom: 0;">
+          <thead>
+            <tr>
+              <th style="width: 30%;">Component</th>
+              <th style="width: 35%;">Value</th>
+              <th style="width: 35%;">Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="td-label">CPU</td>
+              <td class="td-value">
+                35.7%
+                <div class="bar-track"><div class="bar-fill " style="width:35.7%"></div></div>
+              </td>
+              <td>i5 M460</td>
+            </tr>
+            <tr>
+              <td class="td-label">Memory</td>
+              <td class="td-value">
+                3.3 GB
+                <div class="bar-track"><div class="bar-fill danger" style="width:90.1%"></div></div>
+              </td>
+              <td>of 3.6 GB (90.1%)</td>
+            </tr>
+            <tr>
+              <td class="td-label">NAS Disk</td>
+              <td class="td-value">
+                0.0 GB
+                <div class="bar-track"><div class="bar-fill " style="width:0.0%"></div></div>
+              </td>
+              <td>of 195.8 GB (0.0%)</td>
+            </tr>
+            <tr>
+              <td class="td-label">CPU Temp</td>
+              <td class="td-value">67 °C</td>
+              <td>Thermal zone 0</td>
+            </tr>
+            <tr>
+              <td class="td-label">Uptime</td>
+              <td class="td-value" colspan="2">0d 0h 36m</td>
+            </tr>
+          </tbody>
+        </table>
+      </td>
+      <td style="width: 30%; vertical-align: top; border: 2px dashed var(--border); padding: 8px; text-align: center;">
+        <div style="font-size: 11px; font-weight: 800; color: var(--gray-dark); margin-top: 45px; text-transform: uppercase;">
+          <img src="Camelot_Singularity.png" alt="Camelot" style="width: 100%; height: auto">
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <details open>
+    <summary class="divider">Network</summary>
+    <table class="tbl">
+      <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td class="td-label">▲ OUT</td><td class="td-value">4.6 MB</td></tr>
+        <tr><td class="td-label">▼ IN</td><td class="td-value">12.4 MB</td></tr>
+        <tr><td class="td-label">Queued</td><td class="td-value">0</td></tr>
+        <tr><td class="td-label">Done</td><td class="td-value">0</td></tr>
+      </tbody>
+    </table>
+  </details>
+
+  <details open>
+    <summary class="divider">Services</summary>
+    <table class="tbl">
+      <thead><tr><th>Service</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td class='td-svc'>Telegram Bot</td><td class='td-status'><div class='status-dot'><div class='dot '></div><span class='status-text online'>ONLINE</span></div></td></tr>
+<tr><td class='td-svc'>Samba</td><td class='td-status'><div class='status-dot'><div class='dot '></div><span class='status-text online'>ONLINE</span></div></td></tr>
+<tr><td class='td-svc'>HTTP Server</td><td class='td-status'><div class='status-dot'><div class='dot '></div><span class='status-text online'>ONLINE</span></div></td></tr>
+<tr><td class='td-svc'>SSH</td><td class='td-status'><div class='status-dot'><div class='dot offline'></div><span class='status-text offline'>OFFLINE</span></div></td></tr>
+
+      </tbody>
+    </table>
+  </details>
+
+  <details open>
+    <summary class="divider">Command Log</summary>
+    <table class="tbl">
+      <thead><tr><th>Time</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td class='td-time'>16:13</td><td class='td-msg'>/status</td></tr>
+<tr><td class='td-time'>16:13</td><td class='td-msg'>/cd</td></tr>
+<tr><td class='td-time'>16:12</td><td class='td-msg'>/ls</td></tr>
+<tr><td class='td-time'>16:12</td><td class='td-msg'>/cd</td></tr>
+
+      </tbody>
+    </table>
+  </details>
+
+  <div style="font-size: 10px; text-align: center; margin-top: 15px; color: var(--gray-dark);">
+    Generated: 2026-06-08 07:56:32
+  </div>
+</body>
+</html>

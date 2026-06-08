@@ -1,0 +1,14 @@
+[Unit]
+Description=Bedivere Telegram Bot
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=artoria
+WorkingDirectory=/home/artoria
+ExecStart=/usr/bin/python3 /home/artoria/Desktop/camelot/bedivere.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

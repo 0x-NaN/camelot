@@ -1,0 +1,163 @@
+SAMBA FIELD MANUAL
+Project Camelot — Artoria Node (G460)
+======================================
+
+WHAT IS SAMBA
+--------------
+Samba lets Windows machines (like Lancelot) access the NAS partition
+on Artoria over the local network. The shared folder is /mnt/nas,
+accessible as \\<Artoria-IP>\nas from Windows.
+
+Share name: nas
+Share path: /mnt/nas
+Allowed user: artoria
+Config file: /etc/samba/smb.conf
+
+
+ACCESSING FROM WINDOWS (LANCELOT)
+-----------------------------------
+1. Open File Explorer
+2. In the address bar type:
+       \\<Artoria-IP>\nas
+   Example: \\192.168.1.x\nas
+3. Login with:
+       Username: artoria
+       Password: <your samba password>
+4. You can map it as a network drive for permanent access:
+   Right click This PC -> Map network drive -> enter the path above
+
+
+STARTING AND STOPPING
+----------------------
+Check status:
+    sudo systemctl status smbd
+
+Start Samba:
+    sudo systemctl start smbd
+
+Stop Samba:
+    sudo systemctl stop smbd
+
+Restart Samba:
+    sudo systemctl restart smbd
+
+
+AUTOSTART ON BOOT
+------------------
+Enable autostart (already done):
+    sudo systemctl enable smbd
+
+Disable autostart:
+    sudo systemctl disable smbd
+
+
+CHANGING SAMBA PASSWORD
+------------------------
+To change artoria's Samba password:
+    sudo smbpasswd artoria
+
+To add a new Samba user:
+    sudo smbpasswd -a <username>
+
+Note: Samba passwords are separate from Linux login passwords.
+
+
+EDITING SAMBA CONFIG
+---------------------
+Open config:
+    sudo nano /etc/samba/smb.conf
+
+After editing, always restart Samba:
+    sudo systemctl restart smbd
+
+To verify config has no errors:
+    testparm
+
+
+VIEWING SAMBA LOGS
+-------------------
+    sudo journalctl -u smbd -n 50
+    sudo journalctl -u smbd -f
+
+
+NAS PARTITION
+--------------
+Mount point: /mnt/nas
+Device: /dev/sdb2
+Filesystem: ext4
+Size: 200GB
+Owner: artoria
+
+Check if NAS is mounted:
+    lsblk | grep sdb2
+
+Mount manually if not mounted:
+    sudo mount /mnt/nas
+
+Check available space:
+    df -h /mnt/nas
+
+The NAS auto-mounts on boot via /etc/fstab.
+If it's not mounting on boot, check:
+    cat /etc/fstab
+
+
+IF WINDOWS CAN'T SEE THE SHARE
+--------------------------------
+1. Check Samba is running:
+       sudo systemctl status smbd
+
+2. Check NAS is mounted:
+       lsblk | grep sdb2
+
+3. Check Artoria's IP hasn't changed:
+       ip addr show | grep "inet "
+
+4. Check firewall isn't blocking Samba:
+       sudo ufw status
+   If active, allow Samba:
+       sudo ufw allow samba
+
+5. Try restarting Samba:
+       sudo systemctl restart smbd
+
+6. Verify share config is valid:
+       testparm
+
+
+IF NAS WON'T MOUNT
+-------------------
+1. Check the partition exists:
+       lsblk
+
+2. Try mounting manually:
+       sudo mount /mnt/nas
+
+3. Check fstab entry:
+       cat /etc/fstab
+
+4. Check filesystem for errors (unmount first):
+       sudo umount /mnt/nas
+       sudo fsck /dev/sdb2
+
+
+ARCHIVE SCRIPT
+---------------
+The Camelot archival script writes cold DB records to:
+    /mnt/nas/camelot_archives/
+
+Make sure NAS is mounted before archive runs, otherwise it will fail.
+Check archive log at:
+    ~/Desktop/camelot/archive.log
+
+
+FLEET CONTEXT
+--------------
+/mnt/nas is shared storage between:
+- Artoria (G460) — always-on server, mounts natively
+- Lancelot (Asus TUF) — accesses via Samba over WiFi when online
+- Used for: datasets, model files, DB archives, job outputs
+
+======================================
+Last updated: June 2026
+======================================

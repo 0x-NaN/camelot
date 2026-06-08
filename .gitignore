@@ -1,0 +1,23 @@
+# Config — contains secrets, never push
+config.py
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Logs
+*.log
+archive.log
+
+# Archives
+archives/
+
+# Database
+*.sql
+*.dump
+
+# OS junk
+.DS_Store
+Thumbs.db
+*.swp

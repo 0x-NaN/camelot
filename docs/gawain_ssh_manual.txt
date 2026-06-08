@@ -1,0 +1,175 @@
+GAWAIN & SSH FIELD MANUAL
+Project Camelot — Artoria Node (G460)
+======================================
+
+WHAT IS GAWAIN
+---------------
+Gawain is the execution engine. It SSHes into Lancelot (Asus TUF)
+over Tailscale and runs Python scripts there, streaming output back
+to Bedivere which relays it to Telegram.
+
+File: /home/artoria/Desktop/camelot/gawain.py
+SSH user on Lancelot: sshuser
+SSH key: /home/artoria/.ssh/id_ed25519
+Python path on Lancelot: C:/Users/asmit/AppData/Local/Programs/Python/Python312/python.exe
+
+
+TRIGGERING GAWAIN FROM TELEGRAM
+---------------------------------
+Send from Telegram:
+    /run <script_path>
+
+Example:
+    /run C:/Users/asmit/Desktop/myscript.py
+    /run C:/Users/sshuser/test.py
+
+Gawain will SSH into Lancelot, run the script, and return output
+to Telegram.
+
+
+SCRIPT ACCESS ON LANCELOT
+---------------------------
+sshuser has read access to:
+    C:\Users\sshuser\         — sshuser's home folder
+    C:\Users\asmit\Desktop\   — asmit's Desktop (read only)
+
+To run a script, it must be in one of these locations.
+
+To grant access to other folders:
+    icacls "C:\path\to\folder" /grant "sshuser:R"
+
+To grant write access:
+    icacls "C:\path\to\folder" /grant "sshuser:F"
+
+
+SSH SETUP NOTES (IMPORTANT)
+-----------------------------
+Lancelot uses a Windows Microsoft account (asmit) as the main login.
+SSH cannot authenticate against Microsoft accounts directly.
+A separate local account (sshuser) was created for SSH access.
+
+sshuser credentials:
+    Username: sshuser
+    Password: camelot123 (change this before going to production)
+    Group: Administrators
+
+Passwordless SSH works via key stored at:
+    C:\ProgramData\ssh\administrators_authorized_keys
+    (NOT C:\Users\sshuser\.ssh\authorized_keys)
+
+This is because sshuser is in the Administrators group — Windows
+OpenSSH uses the ProgramData location for admin users.
+
+
+MANUAL SSH FROM ARTORIA TO LANCELOT
+-------------------------------------
+    ssh sshuser@<LANCELOT_TAILSCALE_IP>
+
+If passwordless fails, use password:
+    ssh -o PubkeyAuthentication=no sshuser@<LANCELOT_TAILSCALE_IP>
+    Password: camelot123
+
+
+IF PASSWORDLESS SSH BREAKS
+----------------------------
+1. Check the key is still in the right place on Lancelot:
+   In PowerShell as Administrator:
+       Get-Content "C:\ProgramData\ssh\administrators_authorized_keys"
+   Should show Artoria's public key (ssh-ed25519 ...)
+
+2. If empty or missing, get Artoria's public key:
+   On Artoria:
+       cat ~/.ssh/id_ed25519.pub
+   Copy entire output, then on Lancelot in PowerShell as Administrator:
+       Set-Content -Path "C:\ProgramData\ssh\administrators_authorized_keys" -Value "PASTE_KEY_HERE"
+       icacls "C:\ProgramData\ssh\administrators_authorized_keys" /inheritance:r /grant "SYSTEM:F" /grant "BUILTIN\Administrators:F"
+       Restart-Service sshd
+
+3. Verify sshd is running on Lancelot:
+       Get-Service sshd
+   Start if stopped:
+       Start-Service sshd
+
+4. Check Tailscale is connected on both machines:
+   On Artoria:
+       tailscale status
+   Should show both saberartoria and lancelot as connected.
+
+5. Test connection with verbose output:
+   On Artoria:
+       ssh -v sshuser@<LANCELOT_TAILSCALE_IP>
+
+
+IF GAWAIN FAILS TO RUN SCRIPTS
+--------------------------------
+1. Check Python path is correct in gawain.py:
+       nano ~/Desktop/camelot/gawain.py
+   Look for the exec_command line — full Python path must match
+   where Python is installed on Lancelot.
+
+2. Verify Python path on Lancelot:
+       where python
+   Or check:
+       C:\Users\asmit\AppData\Local\Programs\Python\Python312\python.exe
+
+3. Check script path exists on Lancelot before running.
+
+4. Check sshuser has read access to the script location.
+
+
+SSHD ON LANCELOT — KEY COMMANDS
+---------------------------------
+Start SSH server:
+    Start-Service sshd
+
+Stop SSH server:
+    Stop-Service sshd
+
+Restart SSH server:
+    Restart-Service sshd
+
+Check status:
+    Get-Service sshd
+
+Edit SSH config:
+    notepad C:\ProgramData\ssh\sshd_config
+
+Key settings in sshd_config:
+    PasswordAuthentication yes
+    AuthorizedKeysFile __PROGRAMDATA__/ssh/administrators_authorized_keys
+
+
+TAILSCALE IPs
+--------------
+Artoria (G460):   100.73.60.58
+Lancelot (TUF):   100.112.195.4
+
+Check current IPs:
+    tailscale status     (on either machine)
+
+
+SSHUSER MANAGEMENT ON LANCELOT
+--------------------------------
+Check sshuser exists:
+    Get-LocalUser sshuser
+
+Reset sshuser password (run in PowerShell as Administrator):
+    — Cannot use net user for Microsoft account machines
+    — Use: $password = ConvertTo-SecureString "newpassword" -AsPlainText -Force
+           Set-LocalUser -Name sshuser -Password $password
+
+Add sshuser to Administrators (if removed):
+    net localgroup administrators sshuser /add
+
+
+FLEET CONTEXT
+--------------
+Artoria   = G460 — initiates SSH, runs Gawain
+Lancelot  = Asus TUF — receives SSH, runs scripts, has RTX 4060
+sshuser   = local Windows account on Lancelot for SSH access
+Gawain    = execution engine on Artoria that SSHes into Lancelot
+Bedivere  = Telegram bot that calls Gawain via /run command
+
+======================================
+Last updated: June 2026
+======================================

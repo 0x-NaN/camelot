@@ -1,0 +1,232 @@
+SERVICES FIELD MANUAL
+Project Camelot — Artoria Node (G460)
+======================================
+
+ALL SERVICES QUICK REFERENCE
+------------------------------
+Service         | systemd name   | What it does
+----------------|----------------|---------------------------
+Bedivere        | bedivere       | Telegram bot
+PostgreSQL      | postgresql     | Camelot database
+Samba           | smbd           | NAS file sharing
+HUD HTTP Server | camelot-hud    | Serves hud.html to Kindle
+SSH             | ssh            | Remote access to Artoria
+
+
+UNIVERSAL COMMANDS
+-------------------
+Replace <service> with the systemd name from the table above.
+
+Check status:
+    sudo systemctl status <service>
+
+Start:
+    sudo systemctl start <service>
+
+Stop:
+    sudo systemctl stop <service>
+
+Restart:
+    sudo systemctl restart <service>
+
+Enable autostart on boot:
+    sudo systemctl enable <service>
+
+Disable autostart:
+    sudo systemctl disable <service>
+
+View live logs:
+    journalctl -u <service> -f
+
+View last 50 lines of logs:
+    journalctl -u <service> -n 50
+
+
+BEDIVERE (Telegram Bot)
+------------------------
+systemd name: bedivere
+File: /home/artoria/Desktop/camelot/bedivere.py
+
+Start:   sudo systemctl start bedivere
+Stop:    sudo systemctl stop bedivere
+Restart: sudo systemctl restart bedivere
+Logs:    journalctl -u bedivere -f
+
+Run in dev mode (live terminal output, Ctrl+C to stop):
+    python3 ~/Desktop/camelot/bedivere.py
+
+After editing bedivere.py, always restart the service:
+    sudo systemctl restart bedivere
+
+Note: Stop Bedivere before any database schema changes
+to avoid table locks.
+
+Telegram commands available:
+    /start    — check if Bedivere is online
+    /ping     — latency check
+    /status   — DB and job queue status
+    /ls       — list files on Lancelot
+    /cd       — change directory on Lancelot
+    /mkdir    — create folder on Lancelot
+    /run      — dispatch a script to Lancelot
+    /confirm  — confirm a pending /run
+    /cancel   — cancel a pending /run
+    /ask      — send prompt to phi3:mini (WIP)
+
+
+POSTGRESQL (Camelot Database)
+------------------------------
+systemd name: postgresql
+
+Start:   sudo systemctl start postgresql
+Stop:    sudo systemctl stop postgresql
+Restart: sudo systemctl restart postgresql
+
+Connect to database:
+    psql -U artoria -d camelot -h localhost
+
+Useful psql commands:
+    \dt             — list tables
+    \d <table>      — describe table
+    \q              — quit
+
+Check recent logs:
+    SELECT * FROM logs ORDER BY ts DESC LIMIT 20;
+
+Check job queue:
+    SELECT * FROM queue;
+
+Check jobs:
+    SELECT * FROM jobs ORDER BY created_at DESC LIMIT 20;
+
+Note: PostgreSQL must be running before starting Bedivere.
+Always start PostgreSQL first if starting services manually.
+
+
+SAMBA (NAS File Sharing)
+-------------------------
+systemd name: smbd
+
+Start:   sudo systemctl start smbd
+Stop:    sudo systemctl stop smbd
+Restart: sudo systemctl restart smbd
+
+NAS mount point: /mnt/nas
+Share accessible from Windows at: \\<Artoria-IP>\nas
+
+Check NAS is mounted:
+    lsblk | grep sdb2
+
+Mount NAS manually if not mounted:
+    sudo mount /mnt/nas
+
+Check Samba config:
+    testparm
+
+Edit Samba config:
+    sudo nano /etc/samba/smb.conf
+
+Change Samba password:
+    sudo smbpasswd artoria
+
+
+HUD HTTP SERVER (Kindle Display)
+----------------------------------
+systemd name: camelot-hud
+
+Start:   sudo systemctl start camelot-hud
+Stop:    sudo systemctl stop camelot-hud
+Restart: sudo systemctl restart camelot-hud
+
+Serves: /home/artoria/Desktop/camelot/hud.html
+Port: 8080
+Kindle URL: http://<Artoria-LAN-IP>:8080/hud.html
+Artoria LAN IP: 10.137.97.188
+
+Regenerate HUD manually:
+    python3 ~/Desktop/camelot/camelot/hud_generator.py
+
+HUD auto-regenerates via anacron daily.
+Crontab entries handle 30s refresh during active sessions:
+    crontab -e   — to view/edit
+
+
+SSH
+----
+systemd name: ssh
+
+Start:   sudo systemctl start ssh
+Stop:    sudo systemctl stop ssh
+Restart: sudo systemctl restart ssh
+
+Artoria SSH port: 22 (default)
+Connect to Artoria from another machine:
+    ssh artoria@<Artoria-IP>
+
+
+STARTUP ORDER (if starting everything manually)
+------------------------------------------------
+If Artoria reboots and services don't auto-start:
+
+1. Start PostgreSQL first:
+       sudo systemctl start postgresql
+
+2. Mount NAS:
+       sudo mount /mnt/nas
+
+3. Start Samba:
+       sudo systemctl start smbd
+
+4. Start Bedivere:
+       sudo systemctl start bedivere
+
+5. Start HUD server (optional):
+       sudo systemctl start camelot-hud
+
+All services are set to autostart on boot (systemctl enable).
+This order only needed if something goes wrong.
+
+
+CHECK ALL SERVICES AT ONCE
+----------------------------
+    sudo systemctl status bedivere postgresql smbd ssh camelot-hud
+
+
+STOP ALL SERVICES AT ONCE
+---------------------------
+    sudo systemctl stop bedivere smbd camelot-hud
+
+Note: Don't stop postgresql unless necessary — Bedivere depends on it.
+
+
+LANCELOT SERVICES (Windows — Asus TUF)
+----------------------------------------
+OpenSSH Server:
+    Start:   Start-Service sshd
+    Stop:    Stop-Service sshd
+    Restart: Restart-Service sshd
+    Status:  Get-Service sshd
+
+Ollama (runs in background automatically):
+    Start:   ollama serve
+    Check:   curl http://localhost:11434
+    Models:  ollama list
+
+Tailscale:
+    Status:  tailscale status
+    Connect: tailscale up
+    Stop:    tailscale down
+
+
+SUSPEND / SLEEP — ARTORIA
+---------------------------
+Artoria should NEVER sleep. Verify sleep is disabled:
+    sudo systemctl status sleep.target
+
+If sleep gets re-enabled somehow:
+    sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
+
+
+======================================
+Last updated: June 2026
+======================================

@@ -1,0 +1,163 @@
+BEDIVERE FIELD MANUAL
+Project Camelot — Artoria Node (G460)
+======================================
+
+WHAT IS BEDIVERE
+----------------
+Bedivere is the Telegram bot that acts as the messenger between you and
+the fleet. It runs on Artoria (G460), talks to the Camelot PostgreSQL
+database, and eventually relays jobs to Lancelot (Asus TUF).
+
+Bot username: @Bedivere_camelot_bot
+Bot file: /home/artoria/bedivere.py
+Service name: bedivere
+
+
+STARTING AND STOPPING
+----------------------
+Check if Bedivere is running:
+    sudo systemctl status bedivere
+
+Start Bedivere:
+    sudo systemctl start bedivere
+
+Stop Bedivere:
+    sudo systemctl stop bedivere
+
+Restart Bedivere:
+    sudo systemctl restart bedivere
+
+Run in dev mode (see live logs in terminal, Ctrl+C to stop):
+    python3 ~/bedivere.py
+
+
+AUTOSTART ON BOOT
+------------------
+Enable autostart:
+    sudo systemctl enable bedivere
+
+Disable autostart:
+    sudo systemctl disable bedivere
+
+
+VIEWING LOGS
+-------------
+Live logs (follow mode):
+    journalctl -u bedivere -f
+
+Last 50 lines:
+    journalctl -u bedivere -n 50
+
+Logs since last boot:
+    journalctl -u bedivere -b
+
+
+EDITING BEDIVERE
+-----------------
+Open the bot file:
+    nano ~/bedivere.py
+
+After editing, restart the service to apply changes:
+    sudo systemctl restart bedivere
+
+If you broke something and need to revert, check the DB logs:
+    sudo -u postgres psql -d camelot -c "SELECT * FROM logs ORDER BY ts DESC LIMIT 20;"
+
+
+DATABASE — CAMELOT
+-------------------
+Connect to the database:
+    psql -U artoria -d camelot -h localhost
+
+List all tables:
+    \dt
+
+Check recent logs:
+    SELECT * FROM logs ORDER BY ts DESC LIMIT 20;
+
+Check job queue:
+    SELECT * FROM queue;
+
+Check all jobs:
+    SELECT * FROM jobs ORDER BY created_at DESC LIMIT 20;
+
+Exit psql:
+    \q
+
+
+POSTGRESQL SERVICE
+-------------------
+Check if PostgreSQL is running:
+    sudo systemctl status postgresql
+
+Start PostgreSQL:
+    sudo systemctl start postgresql
+
+Stop PostgreSQL:
+    sudo systemctl stop postgresql
+
+Note: Bedivere depends on PostgreSQL. Always make sure PostgreSQL
+is running before starting Bedivere.
+
+
+IF BEDIVERE WON'T START
+------------------------
+1. Check PostgreSQL is running:
+       sudo systemctl status postgresql
+
+2. Check for errors in the service log:
+       journalctl -u bedivere -n 50
+
+3. Try running manually to see the exact error:
+       python3 ~/bedivere.py
+
+4. Check your token is correct in bedivere.py:
+       nano ~/bedivere.py
+
+5. Check internet connectivity:
+       ping -c 3 google.com
+
+6. If token is compromised, get a new one from @BotFather on Telegram:
+       /mybots -> Bedivere -> API Token -> Revoke current token
+       Then update TOKEN in bedivere.py and restart.
+
+
+IF TELEGRAM MESSAGES AREN'T GOING THROUGH
+-------------------------------------------
+1. Check Bedivere is actually running:
+       sudo systemctl status bedivere
+
+2. Check internet from Artoria:
+       ping -c 3 api.telegram.org
+
+3. Restart Bedivere:
+       sudo systemctl restart bedivere
+
+4. If still failing, run in dev mode to see live errors:
+       python3 ~/bedivere.py
+
+
+SUSPEND / SLEEP
+----------------
+Artoria should NEVER sleep — it is an always-on server.
+If it suspends, Bedivere and Camelot go offline.
+
+To disable sleep permanently:
+    sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
+
+To verify sleep is disabled:
+    sudo systemctl status sleep.target
+
+
+FLEET CONTEXT
+--------------
+Artoria   = G460 (this machine) — always-on brain, gateway
+Lancelot  = Asus TUF F15 — GPU compute node (offline until repaired)
+Bedivere  = this Telegram bot — messenger
+Merlin    = AI/inference layer (llama.cpp) — not set up yet
+Gawain    = execution engine — not set up yet
+Camelot   = PostgreSQL database on this machine
+
+======================================
+Last updated: June 2026
+======================================
