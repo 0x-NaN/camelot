@@ -67,6 +67,7 @@ A Python script reads live metrics via psutil, queries the database for recent a
 
 Displays: CPU usage, RAM, disk, temperature, uptime, network traffic, service liveness, recent command log.
 
+![Fleet HUD running](HUD_Example.png)
 ---
 
 ## Stack
